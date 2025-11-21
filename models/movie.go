@@ -5,6 +5,6 @@ type Movie struct {
 	OriginalTitle string  `json:"original_title"`
 	Overview      string  `json:"overview"`
 	Language      string  `json:"original_language"`
-	ReleateDate   string  `json:"release_date"`
+	ReleaseDate   string  `json:"release_date"`
 	Rating        float64 `json:"vote_average"`
 }

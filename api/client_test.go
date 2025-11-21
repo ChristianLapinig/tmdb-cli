@@ -17,7 +17,7 @@ func TestClient_FetchMovies_Success(t *testing.T) {
 				OriginalTitle: "Test Movie",
 				Overview:      "Test Overview",
 				Language:      "en",
-				ReleateDate:   "2024-01-01",
+				ReleaseDate:   "2024-01-01",
 				Rating:        8.5,
 			},
 		},
