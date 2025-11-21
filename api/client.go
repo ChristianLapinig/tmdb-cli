@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/ChristianLapinig/tmdb-cli/constants"
 	"github.com/ChristianLapinig/tmdb-cli/models"
 )
 
@@ -29,6 +30,10 @@ func CreateClient(baseURL, accessToken string) *Client {
 	}
 }
 
+func DefaultClient(accessToken string) *Client {
+	return CreateClient(constants.BaseURL, accessToken)
+}
+
 func (c *Client) FetchMovies(category string) (*models.MovieRes, error) {
 	url := fmt.Sprintf("%s/movie/%s", c.BaseURL, category)
 	req, err := http.NewRequest("GET", url, nil)
@@ -46,12 +51,12 @@ func (c *Client) FetchMovies(category string) (*models.MovieRes, error) {
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("Error reading response body: %w", err)
 	}
 
 	var movieRes models.MovieRes
 	if err := json.Unmarshal(body, &movieRes); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 
 	return &movieRes, nil
