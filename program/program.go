@@ -1,39 +1,62 @@
 package program
 
 import (
-	"flag"
 	"fmt"
+	"io"
 	"os"
-	"strings"
+	"slices"
 
+	"github.com/ChristianLapinig/tmdb-cli/api"
 	"github.com/ChristianLapinig/tmdb-cli/categories"
-	"github.com/ChristianLapinig/tmdb-cli/constants"
-	//"github.com/ChristianLapinig/tmdb-cli/movies"
+	"github.com/ChristianLapinig/tmdb-cli/models"
 )
 
-func Program(accessToken string) {
-	flag.Usage = func() {
-		fmt.Println("Usage: tmdb-cli --type <category>")
-		fmt.Println("Please note that the --type flag must also be passed.")
-		fmt.Printf("One of the following categories must be passed as an argument:\n")
-		for _, category := range categories.Categories {
-			fmt.Println(strings.Repeat(" ", 4) + "- " + string(category))
-		}
+type Program struct {
+	MovieClient api.MovieClient
+	Output      io.Writer
+}
+
+func CreateProgram(client api.MovieClient) *Program {
+	return &Program{
+		MovieClient: client,
+		Output:      os.Stdout,
+	}
+}
+
+func (p *Program) Run(category string) error {
+	if !slices.Contains(categories.Categories, categories.Category(category)) {
+		return fmt.Errorf("%s is not a valid category", category)
 	}
 
-	if accessToken == "" {
-		fmt.Println(constants.AccessTokenRequired)
-		os.Exit(1)
+	movieRes, err := p.MovieClient.FetchMovies(category)
+	if err != nil {
+		return fmt.Errorf("failed to fetch movies: %w", err)
 	}
 
-	typeFlag := flag.Bool("type", false, "The category of movies to be display (i.e, now_playing, popular, upcoming, and top_rated")
+	if len(movieRes.Results) == 0 {
+		return fmt.Errorf("No movies found for category %s", category)
+	}
 
-	flag.Parse()
+	p.displayMovies(movieRes.Results)
+	return nil
+}
 
-	if *typeFlag {
-		category := flag.Args()[0]
-		if category == "" {
-			fmt.Println("No category specified. Please see usage below")
-		}
+// Legacy function for backwards compatability
+func Execute(category, accessToken string) {
+	client := api.DefaultClient(accessToken)
+	program := CreateProgram(client)
+	if err := program.Run(category); err != nil {
+		fmt.Fprint(os.Stderr, "Error:", err)
+	}
+}
+
+func (p *Program) displayMovies(movies []models.Movie) {
+	for _, movie := range movies {
+		fmt.Fprintln(p.Output, "-----------------------")
+		fmt.Fprintf(p.Output, "Title: %s\n", movie.OriginalTitle)
+		fmt.Fprintf(p.Output, "Overview: %s\n", movie.Overview)
+		fmt.Fprintf(p.Output, "Language: %s\n", movie.Language)
+		fmt.Fprintf(p.Output, "Release Date: %s\n", movie.ReleateDate)
+		fmt.Fprintf(p.Output, "Rating: %.1f\n", movie.Rating)
 	}
 }
